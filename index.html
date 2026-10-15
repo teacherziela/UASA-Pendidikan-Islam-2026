@@ -59,6 +59,11 @@
     .pager button{background:var(--ungu);color:white}
     .notechip{display:inline-block;background:#efe9ff;color:#4c3c93;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;margin-top:6px}
     .ok{color:#2b7a3f}
+    .timerbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:9px}
+    .timerclock{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;background:#170d37;color:#fff;padding:6px 12px;border-radius:10px;letter-spacing:1px}
+    .timerclock.warning{background:#a33d18}.timerclock.expired{background:#a61c33}
+    .locknotice{background:#fff2f0;color:#90273c;border-left:5px solid #bd263e;padding:12px;margin:8px 0;border-radius:8px;font-weight:700}
+    .waitnotice{background:#fff9e4;color:#56431e;border-left:5px solid #c79e38;padding:12px;margin:8px 0;border-radius:8px;font-weight:700}
     @media (max-width:640px){
       .bar{padding:10px}
       .head{font-size:14px}
@@ -81,13 +86,17 @@
     <button id="prev">← Sebelum</button>
     <button id="next">Seterusnya →</button>
     <button id="goto">Halaman 1 / 15</button>
-    <button class="primary" id="export">⬇ Simpan PDF jawapan</button>
+    <button class="primary" id="export">⬇ Simpan PDF + Jawapan</button>
     <span class="status" id="status">Menyediakan soalan…</span>
+  </div><div class="timerbar">
+    <button class="primary" id="startExam">▶ Mula Peperiksaan (2 jam)</button>
+    <span id="clock" class="timerclock" aria-live="off">02:00:00</span>
+    <span id="timerMessage" class="status">Isi nama dan kelas dahulu, kemudian tekan Mula Peperiksaan.</span>
   </div>
 </header>
 
 <aside class="notice">
-  <strong>Arahan murid:</strong> Lihat kertas soalan asal pada bahagian atas halaman. <strong>Ruang menjawab disediakan terus di bawah halaman yang sama</strong>, jadi tidak perlu lagi pergi ke halaman lain untuk isi jawapan. Semua jawapan disimpan secara automatik pada peranti yang sama. Selepas siap, tekan <strong>Simpan PDF jawapan</strong> dan hantar fail PDF tersebut kepada guru.
+  <strong>Tempoh 2 jam:</strong> Isi nama dan kelas, kemudian tekan <strong>Mula Peperiksaan</strong>. Pemasa tidak berhenti walaupun halaman dimuat semula atau pelayar ditutup. Setelah tamat, jawapan akan dikunci. Cuba simpan PDF secara automatik jika halaman masih terbuka; jika tidak, tekan Simpan PDF jawapan apabila membuka semula halaman. <strong>Arahan murid:</strong> Lihat kertas soalan asal pada bahagian atas halaman. <strong>Ruang menjawab disediakan terus di bawah halaman yang sama</strong>, jadi tidak perlu lagi pergi ke halaman lain untuk isi jawapan. Semua jawapan disimpan secara automatik pada peranti yang sama. Selepas siap, tekan <strong>Simpan PDF jawapan</strong> dan hantar fail PDF tersebut kepada guru.
 </aside>
 
 <main class="stage">
@@ -123,11 +132,52 @@ const STORAGE_KEY='UASA_ISLAM_2026_F2_V2';
 const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
 let answers={};
 try{answers=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){}
-let current=1,doc=null,busy=false;
+const TIMER_KEY='UASA_ISLAM_2026_F2_TIMER_V1';
+const EXAM_MS=2*60*60*1000;
+let timerState={};
+try{timerState=JSON.parse(localStorage.getItem(TIMER_KEY)||'{}')}catch(e){}
+let current=1,doc=null,busy=false,autoExportTriggered=false,exporting=false;
+function started(){return Number.isFinite(timerState.startedAt)&&timerState.startedAt>0}
+function expired(){return started() && (timerState.finished===true || Date.now()>=timerState.startedAt+EXAM_MS)}
+function formatRemaining(t){const seconds=Math.max(0,Math.ceil(t/1000));return [Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60].map(x=>String(x).padStart(2,'0')).join(':')}
+function persistTimer(){try{localStorage.setItem(TIMER_KEY,JSON.stringify(timerState))}catch(e){alert('Penyimpanan pemasa tidak tersedia. Pastikan pelayar membenarkan storan laman web sebelum mula peperiksaan.');throw e}}
+function updateTimer(){
+  const time=started()?Math.max(0,timerState.startedAt+EXAM_MS-Date.now()):EXAM_MS;
+  $('clock').textContent=formatRemaining(time);
+  $('clock').className='timerclock'+(expired()?' expired':started()&&time<=600000?' warning':'');
+  $('startExam').hidden=started();
+  $('timerMessage').textContent=expired()?'MASA TAMAT — jawapan dikunci. Simpan PDF dan hantar kepada guru.':started()?'Peperiksaan sedang berlangsung. Masa terus berjalan jika pelayar ditutup.':'Isi nama dan kelas, kemudian tekan Mula Peperiksaan.';
+  if(expired()){
+    if(!timerState.finished){timerState.finished=true;try{persistTimer()}catch(e){}}
+    if(!autoExportTriggered && doc){autoExportTriggered=true;savePDF(true)}
+  }
+  applyLock();
+}
+function applyLock(){
+  const locked=expired();
+  for(const el of document.querySelectorAll('#fieldlist input,#fieldlist textarea,#fieldlist select')){
+    const id=el.dataset.fieldid;
+    el.disabled=locked || (!started() && id!=='Nama' && id!=='Kelas');
+  }
+}
+$('startExam').onclick=()=>{
+  if(started())return;
+  if(!String(answers.Nama||'').trim() || !String(answers.Kelas||'').trim()){
+    alert('Isi nama penuh dan kelas sebelum memulakan peperiksaan.');showPage(1);return;
+  }
+  if(!confirm('Mulakan peperiksaan sekarang? Pemasa 2 jam akan bermula dan tidak boleh dijeda atau dimulakan semula pada peranti ini.'))return;
+  timerState={startedAt:Date.now(),finished:false};
+  try{persistTimer()}catch(e){return}
+  updateTimer();
+  showPage(2);
+};
+setInterval(updateTimer,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateTimer()});
 const $=x=>document.getElementById(x);
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 function store(id,value){
+  if(expired() || (!started() && id!=='Nama' && id!=='Kelas'))return;
   answers[id]=value;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify(answers));
@@ -249,6 +299,7 @@ function renderField(meta){
         const inp=document.createElement('input');
         inp.type='radio';
         inp.name='A'+i+'_summary';
+        inp.dataset.fieldid='A'+i;
         inp.value=opt;
         inp.checked=(answers['A'+i]||'')===opt;
         inp.addEventListener('change',()=>store('A'+i,opt));
@@ -274,6 +325,7 @@ function renderField(meta){
       const inp=document.createElement('input');
       inp.type='radio';
       inp.name=meta.id;
+      inp.dataset.fieldid=meta.id;
       inp.value=opt;
       inp.checked=(answers[meta.id]||'')===opt;
       inp.addEventListener('change',()=>store(meta.id,opt));
@@ -311,6 +363,7 @@ function renderField(meta){
     el.value=answers[meta.id]||'';
     el.addEventListener('input',()=>store(meta.id,el.value));
   }
+  el.dataset.fieldid=meta.id;
   box.appendChild(el);
   return box;
 }
@@ -334,6 +387,7 @@ function renderAnswerPanel(page){
   $('answerPanel').querySelector('h3').textContent=title;
   $('answerPanel').querySelector('.paneldesc').textContent=desc;
   metas.forEach(meta=>list.appendChild(renderField(meta)));
+  applyLock();
   if(!metas.length){
     const empty=document.createElement('div');
     empty.className='item';
@@ -418,7 +472,81 @@ function answerPNG(f,value){
   return c.toDataURL('image/png');
 }
 
-$('export').onclick=async()=>{
+
+// Helaian jawapan dijana berasingan daripada PDF soalan asal.
+// Ini memastikan semua jawapan muncul, termasuk apabila kedudukan kotak dalam PDF berubah.
+async function appendAnswerSheets(pdf){
+  const PW=612, PH=792, pad=38, scale=2;
+  let canvas,ctx,y,pageCount=0,hasLines=false;
+  async function flush(){
+    if(!hasLines)return;
+    const image=await pdf.embedPng(canvas.toDataURL('image/png'));
+    const page=pdf.addPage([PW,PH]);
+    page.drawImage(image,{x:0,y:0,width:PW,height:PH});
+  }
+  function newSheet(){
+    canvas=document.createElement('canvas');canvas.width=PW*scale;canvas.height=PH*scale;
+    ctx=canvas.getContext('2d');ctx.scale(scale,scale);
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,PW,PH);
+    ctx.fillStyle='#282043';ctx.font='bold 17px Arial, sans-serif';ctx.textAlign='left';ctx.direction='ltr';
+    ctx.fillText('UASA PENDIDIKAN ISLAM 2026 — JAWAPAN MURID',pad,42);
+    ctx.fillStyle='#555';ctx.font='12px Arial, sans-serif';
+    ctx.fillText('Nama: '+String(answers.Nama||''),pad,64);
+    ctx.fillText('Kelas: '+String(answers.Kelas||''),pad,81);
+    ctx.fillStyle='#aaa';ctx.fillRect(pad,95,PW-2*pad,1);
+    y=119;pageCount++;hasLines=true;
+  }
+  async function checkSpace(h){if(y+h>PH-45){await flush();newSheet()}}
+  async function heading(title){
+    await checkSpace(34);
+    ctx.fillStyle='#ede9f8';ctx.fillRect(pad,y-15,PW-2*pad,29);
+    ctx.fillStyle='#30205c';ctx.font='bold 14px Arial, sans-serif';ctx.direction='ltr';ctx.textAlign='left';
+    ctx.fillText(title,pad+8,y+4);y+=38;
+  }
+  async function entry(label,value){
+    const v=String(value||'').trim()||'— tidak dijawab —';
+    const maxW=PW-2*pad-18;
+    ctx.font='13px Arial, sans-serif';
+    let lines=[];
+    for(const para of v.split('\n')){
+      let line='';
+      for(const word of para.split(/\s+/)){
+        const t=line?line+' '+word:word;
+        if(ctx.measureText(t).width>maxW && line){lines.push(line);line=word}else line=t;
+      }
+      lines.push(line);
+    }
+    await checkSpace(25);
+    ctx.fillStyle='#312363';ctx.font='bold 12px Arial, sans-serif';ctx.direction='ltr';ctx.textAlign='left';
+    ctx.fillText(label,pad+5,y);y+=19;
+    for(const l of lines){
+      await checkSpace(19);
+      ctx.fillStyle='#151515';ctx.font='13px Arial, sans-serif';
+      if(/[\u0600-\u06FF]/.test(l)){ctx.direction='rtl';ctx.textAlign='right';ctx.fillText(l,PW-pad-9,y)}
+      else{ctx.direction='ltr';ctx.textAlign='left';ctx.fillText(l,pad+13,y)}
+      y+=18;
+    }
+    y+=11;
+  }
+  newSheet();
+  await heading('BAHAGIAN A — OBJEKTIF (1–20)');
+  for(let i=1;i<=20;i++) await entry('Soalan '+i,answers['A'+i]||'');
+  const groups=[
+    ['BAHAGIAN B', ['B1a-i','B1a-ii','B1a-iii','B1a-iv','B1b','B1c','B2a-i','B2a-ii','B2b','B2c-Jawi']],
+    ['BAHAGIAN C', ['C3a-i','C3a-ii','C3a-iii','C3b','C4a-i','C4a-ii','C4b-i','C4b-ii','C4b-iii','C4b-iv']],
+    ['BAHAGIAN D', ['D5a','D5b-i','D5b-ii','D5b-iii','D5b-iv','D5c-i','D5c-ii','D5c-iii','D5c-iv','D6a-i','D6a-ii','D6b-i','D6b-ii','D6b-iii','D6b-iv']],
+    ['BAHAGIAN E', ['E7a-i','E7a-ii','E7b-i','E7b-ii','E7b-iii','E7c-i','E7c-ii','E7c-iii','E7d-i','E7d-ii','E7e-i','E7e-ii']]
+  ];
+  for(const [section,ids] of groups){
+    await heading(section);
+    for(const id of ids) await entry(id.replace(/^[BCDE]/,''),answers[id]);
+  }
+  await flush();
+  return pageCount;
+}
+
+async function savePDF(automatic=false){
+  if(exporting)return;exporting=true;
   const b=$('export');
   b.disabled=true;
   b.textContent='Menjana PDF…';
@@ -429,7 +557,7 @@ $('export').onclick=async()=>{
       return;
     }
     const count=FIELDS.filter(f=>f.id!=='Nama' && f.id!=='Kelas' && String(answers[f.id]||'').trim()).length;
-    if(!confirm('Terdapat '+count+' ruang jawapan yang telah diisi. Simpan PDF sekarang?')) return;
+    if(!automatic && !confirm('Terdapat '+count+' ruang jawapan yang telah diisi. Simpan PDF sekarang?')) return;
     const buffer=await (await fetch('./soalan.pdf')).arrayBuffer();
     const pdf=await PDFLib.PDFDocument.load(buffer);
     const pages=pdf.getPages();
@@ -440,6 +568,7 @@ $('export').onclick=async()=>{
       const page=pages[f.p-1];
       page.drawImage(png,{x:f.x,y:792-f.y-f.h,width:f.w,height:f.h});
     }
+    const answerSheetCount=await appendAnswerSheets(pdf);
     pdf.setTitle('UASA Pendidikan Islam Tingkatan 2 2026 - '+answers.Nama);
     const out=await pdf.save();
     const blob=new Blob([out],{type:'application/pdf'});
@@ -450,17 +579,19 @@ $('export').onclick=async()=>{
     document.body.append(a);
     a.click();
     a.remove();
-    $('status').textContent='PDF berjaya dijana. Semak fail di Downloads / Files.';
+    $('status').textContent='✓ PDF dengan '+answerSheetCount+' halaman jawapan dijana. Semak bahagian akhir PDF.';
     $('status').classList.add('ok');
     setTimeout(()=>URL.revokeObjectURL(url),120000);
   }catch(e){
     console.error(e);
     alert('PDF tidak dapat disimpan: '+e.message+'. Pastikan internet aktif, kemudian cuba semula.');
   }finally{
+    exporting=false;
     b.disabled=false;
-    b.textContent='⬇ Simpan PDF jawapan';
+    b.textContent='⬇ Simpan PDF + Jawapan';
   }
-};
+}
+$('export').onclick=()=>savePDF(false);
 
 (async()=>{
   try{
@@ -469,6 +600,7 @@ $('export').onclick=async()=>{
     await showPage(1);
     $('status').textContent='✓ Sedia digunakan';
     $('status').classList.add('ok');
+    updateTimer();
   }catch(e){
     console.error(e);
     $('status').textContent='Gagal memuatkan PDF. Pastikan fail soalan.pdf dimuat naik bersama index.html.';

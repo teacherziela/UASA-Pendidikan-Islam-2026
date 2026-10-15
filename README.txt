@@ -1,17 +1,18 @@
-UASA PENDIDIKAN ISLAM TINGKATAN 2 2026 – WORKSHEET LIVE
+UASA PENDIDIKAN ISLAM 2026 · WORKSHEET LIVE · TIMER 2 JAM (V3)
 
-GitHub Pages:
-1. Cipta repository PUBLIC baharu di GitHub.
-2. Upload index.html dan soalan.pdf pada root repository.
-3. Settings > Pages > Build and deployment > Deploy from a branch > main > /(root) > Save.
-4. Tunggu sehingga pautan GitHub Pages muncul.
-5. Buka link menggunakan Chrome, Safari iPhone atau browser komputer.
-6. Murid isi nama, kelas dan jawapan, lalu tekan Simpan PDF jawapan. Murid perlu menghantar PDF kepada guru.
+MUAT NAIK KE GITHUB PAGES:
+1. Muat naik index.html dan soalan.pdf ke root repo UASA-Pendidikan-Islam-2026.
+2. Gantikan index.html versi lama dengan versi ini. soalan.pdf mesti bersama index.html.
+3. Tunggu deployment GitHub Pages selesai, kemudian buka pautan GitHub Pages.
+4. Jika paparan lama muncul, hard refresh / buka tab baharu.
 
-PENTING:
-- Paparan soalan menggunakan PDF asal TANPA pindaan.
-- Semua jawapan hanya disimpan secara local dalam browser murid, tiada auto-hantar dan tiada backend rekod.
-- PDF dijana di browser dengan jawapan terpapar pada helaian asal.
-- Sambungan internet diperlukan untuk CDN PDF.js dan pdf-lib.
-- Sebelum digunakan dalam peperiksaan sebenar, guru perlu menyemak kedudukan setiap medan jawapan di telefon, iPhone dan komputer.
-- Jika teks esei terlalu panjang untuk ruang, paparan PDF boleh terpotong; jawab mengikut panjang ruang pada kertas.
+PENGGUNAAN MURID:
+1. Isi nama dan kelas pada halaman 1 (boleh diisi sebelum masa bermula).
+2. Tekan Mula Peperiksaan. Jam terus bermula selama 2 jam.
+3. Jawab pada ruangan bawah halaman soalan.
+4. Apabila masa tamat, semua ruangan jawapan dikunci.
+5. Sistem cuba menjana PDF secara automatik jika tab masih dibuka, tetapi pelayar mudah alih mungkin menyekat muat turun automatik. Tekan Simpan PDF jawapan untuk mengambil fail jika belum dimuat turun, kemudian hantar kepada guru.
+
+AMARAN PENTING:
+Ini aplikasi statik GitHub Pages. Masa mula dan jawapan disimpan dalam localStorage pelayar, bukan sistem pelayan. Tidak sesuai dianggap sebagai mekanisme anti-penipuan yang terjamin: penggunaan peranti/pelayar berlainan, pemadaman data dan perubahan jam peranti boleh menjejaskan kawalan. Gunakan peraturan serta pemantauan guru untuk peperiksaan rasmi.
+Penghasilan PDF menggunakan CDN memerlukan internet. Uji terlebih dahulu pada iPhone/Safari, Android/Chrome dan komputer.
