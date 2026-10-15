@@ -88,16 +88,10 @@
     <button id="goto">Halaman 1 / 15</button>
     <button class="primary" id="export">⬇ Simpan PDF + Jawapan</button>
     <span class="status" id="status">Menyediakan soalan…</span>
-  </div><div class="timerbar">
-    <button class="primary" id="startExam">▶ Mula Peperiksaan (2 jam)</button>
-    <span id="clock" class="timerclock" aria-live="off">02:00:00</span>
-    <span id="timerMessage" class="status">Isi nama dan kelas dahulu, kemudian tekan Mula Peperiksaan.</span>
   </div>
 </header>
 
-<aside class="notice">
-  <strong>Tempoh 2 jam:</strong> Isi nama dan kelas, kemudian tekan <strong>Mula Peperiksaan</strong>. Pemasa tidak berhenti walaupun halaman dimuat semula atau pelayar ditutup. Setelah tamat, jawapan akan dikunci. Cuba simpan PDF secara automatik jika halaman masih terbuka; jika tidak, tekan Simpan PDF jawapan apabila membuka semula halaman. <strong>Arahan murid:</strong> Lihat kertas soalan asal pada bahagian atas halaman. <strong>Ruang menjawab disediakan terus di bawah halaman yang sama</strong>, jadi tidak perlu lagi pergi ke halaman lain untuk isi jawapan. Semua jawapan disimpan secara automatik pada peranti yang sama. Selepas siap, tekan <strong>Simpan PDF jawapan</strong> dan hantar fail PDF tersebut kepada guru.
-</aside>
+<aside class="notice"><strong>Arahan:</strong> Isi nama dan kelas. Baca soalan asal di atas dan pilih atau taip jawapan pada ruang di bawah halaman yang sama. Jawapan disimpan pada peranti ini. Tekan <strong>Simpan PDF + Jawapan</strong> selepas selesai dan hantar fail kepada guru. <strong>Tiada pemasa atau kunci masa.</strong></aside>
 
 <main class="stage">
   <section class="pagebox">
@@ -134,51 +128,9 @@ const STORAGE_KEY='UASA_ISLAM_2026_F2_V2';
 const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
 let answers={};
 try{answers=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(e){}
-const TIMER_KEY='UASA_ISLAM_2026_F2_TIMER_V1';
-const EXAM_MS=2*60*60*1000;
-let timerState={};
-try{timerState=JSON.parse(localStorage.getItem(TIMER_KEY)||'{}')}catch(e){}
-let current=1,doc=true,busy=false,autoExportTriggered=false,exporting=false;
-function started(){return Number.isFinite(timerState.startedAt)&&timerState.startedAt>0}
-function expired(){return started() && (timerState.finished===true || Date.now()>=timerState.startedAt+EXAM_MS)}
-function formatRemaining(t){const seconds=Math.max(0,Math.ceil(t/1000));return [Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60].map(x=>String(x).padStart(2,'0')).join(':')}
-function persistTimer(){try{localStorage.setItem(TIMER_KEY,JSON.stringify(timerState))}catch(e){alert('Penyimpanan pemasa tidak tersedia. Pastikan pelayar membenarkan storan laman web sebelum mula peperiksaan.');throw e}}
-function updateTimer(){
-  const time=started()?Math.max(0,timerState.startedAt+EXAM_MS-Date.now()):EXAM_MS;
-  $('clock').textContent=formatRemaining(time);
-  $('clock').className='timerclock'+(expired()?' expired':started()&&time<=600000?' warning':'');
-  $('startExam').hidden=started();
-  $('timerMessage').textContent=expired()?'MASA TAMAT — jawapan dikunci. Simpan PDF dan hantar kepada guru.':started()?'Peperiksaan sedang berlangsung. Masa terus berjalan jika pelayar ditutup.':'Isi nama dan kelas, kemudian tekan Mula Peperiksaan.';
-  if(expired()){
-    if(!timerState.finished){timerState.finished=true;try{persistTimer()}catch(e){}}
-    if(!autoExportTriggered && doc){autoExportTriggered=true;savePDF(true)}
-  }
-  applyLock();
-}
-function applyLock(){
-  const locked=expired();
-  for(const el of document.querySelectorAll('#fieldlist input,#fieldlist textarea,#fieldlist select')){
-    const id=el.dataset.fieldid;
-    el.disabled=locked || (!started() && id!=='Nama' && id!=='Kelas');
-  }
-}
-$('startExam').onclick=()=>{
-  if(started())return;
-  if(!String(answers.Nama||'').trim() || !String(answers.Kelas||'').trim()){
-    alert('Isi nama penuh dan kelas sebelum memulakan peperiksaan.');showPage(1);return;
-  }
-  if(!confirm('Mulakan peperiksaan sekarang? Pemasa 2 jam akan bermula dan tidak boleh dijeda atau dimulakan semula pada peranti ini.'))return;
-  timerState={startedAt:Date.now(),finished:false};
-  try{persistTimer()}catch(e){return}
-  updateTimer();
-  showPage(2);
-};
-setInterval(updateTimer,1000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateTimer()});
-
-
+let current=1,doc=true,busy=false,exporting=false;
+function applyLock(){};
 function store(id,value){
-  if(expired() || (!started() && id!=='Nama' && id!=='Kelas'))return;
   answers[id]=value;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify(answers));
@@ -565,9 +517,27 @@ async function savePDF(automatic=false){
     for(const f of FIELDS){
       const val=String(answers[f.id]||'').trim();
       if(!val) continue;
+      if(f.kind==='mcq') continue; // Objektif ditanda secara kemas dalam langkah khusus di bawah.
       const png=await pdf.embedPng(answerPNG(f,val));
       const page=pages[f.p-1];
       page.drawImage(png,{x:f.x,y:792-f.y-f.h,width:f.w,height:f.h});
+    }
+    // Pusat kotak A/B/C/D di halaman asal PDF (612 x 792 pt).
+    // Hitamkan kotak jawapan, tulis huruf putih tepat di tengah (tiada huruf terapung).
+    const bubblePage=pages[6];
+    const bubbleFont=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+    const bubbleXsLeft=[179.25,207.61,236.11,264.40];
+    const bubbleXsRight=[380.55,408.87,437.38,462.00];
+    for(let n=1;n<=20;n++){
+      const val=String(answers['A'+n]||'').toUpperCase();
+      const idx=['A','B','C','D'].indexOf(val);
+      if(idx<0) continue;
+      const cx=(n<=10?bubbleXsLeft:bubbleXsRight)[idx];
+      const cyTop=186.0+26.52*((n-1)%10);
+      const size=19;
+      bubblePage.drawRectangle({x:cx-size/2,y:792-cyTop-size/2,width:size,height:size,color:PDFLib.rgb(0,0,0)});
+      const tw=bubbleFont.widthOfTextAtSize(val,12);
+      bubblePage.drawText(val,{x:cx-tw/2,y:792-cyTop-4.3,size:12,font:bubbleFont,color:PDFLib.rgb(1,1,1)});
     }
     const answerSheetCount=await appendAnswerSheets(pdf);
     pdf.setTitle('UASA Pendidikan Islam Tingkatan 2 2026 - '+answers.Nama);
@@ -599,7 +569,6 @@ $('export').onclick=()=>savePDF(false);
     await showPage(1);
     $('status').textContent='✓ Soalan sedia digunakan';
     $('status').classList.add('ok');
-    updateTimer();
   }catch(e){
     console.error(e);
     $('status').textContent='Ralat memaparkan soalan: '+e.message;
