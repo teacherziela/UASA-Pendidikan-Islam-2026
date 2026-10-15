@@ -32,7 +32,7 @@
     .pagebox{overflow:hidden}
     .pagehead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#faf8ff;border-bottom:1px solid #eee;font-weight:700;font-size:13px}
     .canvaswrap{padding:14px}
-    canvas.pdfcanvas{display:block;width:100%;height:auto;border:1px solid #ddd;background:white}
+    .pdfcanvas{display:block;width:100%;height:auto;border:1px solid #ddd;background:white}
     .panel{padding:14px 16px}
     .panel h3{margin:0 0 6px;font-size:16px;color:var(--ungu)}
     .paneldesc{font-size:13px;color:#544a70;margin:0 0 12px}
@@ -106,7 +106,7 @@
       <span>Soalan asal</span>
     </div>
     <div class="canvaswrap">
-      <canvas id="pdfcanvas" class="pdfcanvas"></canvas>
+      <img id="pdfcanvas" class="pdfcanvas" src="./halaman/soalan-01.jpg" alt="Halaman soalan 1" loading="eager">
     </div>
   </section>
 
@@ -123,11 +123,11 @@
   </div>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script>
 const FIELDS=[{"p":1,"id":"Nama","x":175,"y":317,"w":355,"h":25,"kind":"text","options":[]},{"p":1,"id":"Kelas","x":175,"y":353,"w":355,"h":25,"kind":"text","options":[]},{"p":7,"id":"A1","x":164,"y":168.0,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A2","x":164,"y":194.55,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A3","x":164,"y":221.1,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A4","x":164,"y":247.65,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A5","x":164,"y":274.2,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A6","x":164,"y":300.75,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A7","x":164,"y":327.3,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A8","x":164,"y":353.85,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A9","x":164,"y":380.4,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A10","x":164,"y":406.95000000000005,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A11","x":382,"y":168.0,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A12","x":382,"y":194.55,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A13","x":382,"y":221.1,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A14","x":382,"y":247.65,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A15","x":382,"y":274.2,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A16","x":382,"y":300.75,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A17","x":382,"y":327.3,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A18","x":382,"y":353.85,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A19","x":382,"y":380.4,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":7,"id":"A20","x":382,"y":406.95000000000005,"w":123,"h":20,"kind":"mcq","options":["A","B","C","D"]},{"p":8,"id":"B1a-i","x":155,"y":431,"w":150,"h":17,"kind":"text","options":[]},{"p":8,"id":"B1a-ii","x":339,"y":463,"w":125,"h":17,"kind":"text","options":[]},{"p":8,"id":"B1a-iii","x":290,"y":496,"w":130,"h":17,"kind":"text","options":[]},{"p":8,"id":"B1a-iv","x":150,"y":532,"w":150,"h":17,"kind":"text","options":[]},{"p":8,"id":"B1b","x":76,"y":584,"w":465,"h":38,"kind":"long","options":[]},{"p":9,"id":"B1c","x":75,"y":182,"w":466,"h":77,"kind":"long","options":[]},{"p":9,"id":"B2a-i","x":90,"y":552,"w":135,"h":22,"kind":"text","options":[]},{"p":9,"id":"B2a-ii","x":422,"y":552,"w":122,"h":22,"kind":"text","options":[]},{"p":9,"id":"B2b","x":76,"y":625,"w":467,"h":79,"kind":"long","options":[]},{"p":10,"id":"B2c-Jawi","x":75,"y":140,"w":465,"h":75,"kind":"long","options":[]},{"p":10,"id":"C3a-i","x":76,"y":345,"w":467,"h":58,"kind":"long","options":[]},{"p":10,"id":"C3a-ii","x":76,"y":454,"w":467,"h":40,"kind":"long","options":[]},{"p":10,"id":"C3a-iii","x":76,"y":525,"w":467,"h":87,"kind":"long","options":[]},{"p":11,"id":"C3b","x":76,"y":167,"w":467,"h":118,"kind":"long","options":[]},{"p":11,"id":"C4a-i","x":76,"y":310,"w":467,"h":45,"kind":"long","options":[]},{"p":11,"id":"C4a-ii","x":76,"y":410,"w":467,"h":93,"kind":"long","options":[]},{"p":11,"id":"C4b-i","x":164,"y":541,"w":100,"h":20,"kind":"select","options":["Suhuf","Kitab"]},{"p":11,"id":"C4b-ii","x":147,"y":580,"w":142,"h":20,"kind":"select","options":["Baitul Izzah","Luh Mahfuz"]},{"p":11,"id":"C4b-iii","x":319,"y":615,"w":102,"h":20,"kind":"select","options":["Taurat","Injil"]},{"p":11,"id":"C4b-iv","x":310,"y":654,"w":120,"h":20,"kind":"select","options":["Al-Quran","Al-Hadis"]},{"p":12,"id":"D5a","x":76,"y":173,"w":456,"h":86,"kind":"long","options":[]},{"p":12,"id":"D5b-i","x":394,"y":330,"w":145,"h":20,"kind":"select","options":["Sunat","Harus","Wajib","Makruh","Haram"]},{"p":12,"id":"D5b-ii","x":394,"y":349,"w":145,"h":20,"kind":"select","options":["Sunat","Harus","Wajib","Makruh","Haram"]},{"p":12,"id":"D5b-iii","x":394,"y":368,"w":145,"h":20,"kind":"select","options":["Sunat","Harus","Wajib","Makruh","Haram"]},{"p":12,"id":"D5b-iv","x":394,"y":405,"w":145,"h":20,"kind":"select","options":["Sunat","Harus","Wajib","Makruh","Haram"]},{"p":12,"id":"D5c-i","x":482,"y":507,"w":45,"h":28,"kind":"select","options":["✓","✗"]},{"p":12,"id":"D5c-ii","x":482,"y":547,"w":45,"h":28,"kind":"select","options":["✓","✗"]},{"p":12,"id":"D5c-iii","x":482,"y":584,"w":45,"h":28,"kind":"select","options":["✓","✗"]},{"p":12,"id":"D5c-iv","x":482,"y":620,"w":45,"h":28,"kind":"select","options":["✓","✗"]},{"p":13,"id":"D6a-i","x":76,"y":108,"w":455,"h":54,"kind":"long","options":[]},{"p":13,"id":"D6a-ii","x":76,"y":265,"w":455,"h":78,"kind":"long","options":[]},{"p":13,"id":"D6b-i","x":151,"y":449,"w":122,"h":21,"kind":"select","options":["wajib","sunat","makruh","haram"]},{"p":13,"id":"D6b-ii","x":151,"y":488,"w":122,"h":21,"kind":"select","options":["wajib","sunat","makruh","haram"]},{"p":13,"id":"D6b-iii","x":151,"y":525,"w":122,"h":21,"kind":"select","options":["wajib","sunat","makruh","haram"]},{"p":13,"id":"D6b-iv","x":151,"y":564,"w":122,"h":21,"kind":"select","options":["wajib","sunat","makruh","haram"]},{"p":14,"id":"E7a-i","x":76,"y":143,"w":458,"h":63,"kind":"long","options":[]},{"p":14,"id":"E7a-ii","x":76,"y":258,"w":458,"h":62,"kind":"long","options":[]},{"p":14,"id":"E7b-i","x":225,"y":370,"w":213,"h":23,"kind":"text","options":[]},{"p":14,"id":"E7b-ii","x":225,"y":389,"w":213,"h":23,"kind":"text","options":[]},{"p":14,"id":"E7b-iii","x":225,"y":408,"w":213,"h":23,"kind":"text","options":[]},{"p":14,"id":"E7c-i","x":484,"y":536,"w":45,"h":25,"kind":"select","options":["✓","✗"]},{"p":14,"id":"E7c-ii","x":484,"y":570,"w":45,"h":25,"kind":"select","options":["✓","✗"]},{"p":14,"id":"E7c-iii","x":484,"y":602,"w":45,"h":25,"kind":"select","options":["✓","✗"]},{"p":15,"id":"E7d-i","x":76,"y":100,"w":460,"h":45,"kind":"long","options":[]},{"p":15,"id":"E7d-ii","x":76,"y":197,"w":460,"h":76,"kind":"long","options":[]},{"p":15,"id":"E7e-i","x":76,"y":326,"w":460,"h":72,"kind":"long","options":[]},{"p":15,"id":"E7e-ii","x":76,"y":480,"w":460,"h":110,"kind":"long","options":[]}];
 
+const $=x=>document.getElementById(x);
 const STORAGE_KEY='UASA_ISLAM_2026_F2_V2';
 const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
 let answers={};
@@ -136,7 +136,7 @@ const TIMER_KEY='UASA_ISLAM_2026_F2_TIMER_V1';
 const EXAM_MS=2*60*60*1000;
 let timerState={};
 try{timerState=JSON.parse(localStorage.getItem(TIMER_KEY)||'{}')}catch(e){}
-let current=1,doc=null,busy=false,autoExportTriggered=false,exporting=false;
+let current=1,doc=true,busy=false,autoExportTriggered=false,exporting=false;
 function started(){return Number.isFinite(timerState.startedAt)&&timerState.startedAt>0}
 function expired(){return started() && (timerState.finished===true || Date.now()>=timerState.startedAt+EXAM_MS)}
 function formatRemaining(t){const seconds=Math.max(0,Math.ceil(t/1000));return [Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60].map(x=>String(x).padStart(2,'0')).join(':')}
@@ -173,8 +173,7 @@ $('startExam').onclick=()=>{
 };
 setInterval(updateTimer,1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateTimer()});
-const $=x=>document.getElementById(x);
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
 
 function store(id,value){
   if(expired() || (!started() && id!=='Nama' && id!=='Kelas'))return;
@@ -397,17 +396,15 @@ function renderAnswerPanel(page){
 }
 
 async function showPage(n){
-  if(busy || !doc) return;
+  if(busy)return;
   busy=true;
   current=Math.max(1,Math.min(15,n));
   $('prev').disabled=$('prev2').disabled=current===1;
   $('next').disabled=$('next2').disabled=current===15;
-  const p=await doc.getPage(current);
-  const v=p.getViewport({scale:1.65});
-  const cv=$('pdfcanvas');
-  cv.width=Math.round(v.width);
-  cv.height=Math.round(v.height);
-  await p.render({canvasContext:cv.getContext('2d'),viewport:v}).promise;
+  const img=$('pdfcanvas');
+  img.src='./halaman/soalan-'+String(current).padStart(2,'0')+'.jpg';
+  img.alt='Soalan asal halaman '+current;
+  img.onerror=()=>{$('status').textContent='Imej soalan tidak dijumpai. Muat naik folder halaman bersama index.html.'};
   renderAnswerPanel(current);
   busy=false;
 }
@@ -595,15 +592,13 @@ $('export').onclick=()=>savePDF(false);
 
 (async()=>{
   try{
-    const task=pdfjsLib.getDocument('./soalan.pdf');
-    doc=await task.promise;
     await showPage(1);
-    $('status').textContent='✓ Sedia digunakan';
+    $('status').textContent='✓ Soalan sedia digunakan';
     $('status').classList.add('ok');
     updateTimer();
   }catch(e){
     console.error(e);
-    $('status').textContent='Gagal memuatkan PDF. Pastikan fail soalan.pdf dimuat naik bersama index.html.';
+    $('status').textContent='Ralat memaparkan soalan: '+e.message;
   }
 })();
 </script>
